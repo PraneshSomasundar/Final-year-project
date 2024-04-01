@@ -15,7 +15,6 @@ class YouTubeAPI:
     def __init__(self):
         self.api_service_name = "youtube"
         self.api_version = "v3"
-        self.DEVELOPER_KEY = "AIzaSyD22hb6jlGM_L3-SQwDlxKaIQ2LAJQKDbE"
         self.youtube = googleapiclient.discovery.build(
             self.api_service_name, self.api_version, developerKey=self.DEVELOPER_KEY)
 

@@ -9,32 +9,6 @@ nltk.download('stopwords')
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer 
 import time
-import googleapiclient.discovery
-import googleapiclient.errors
-
-class YouTubeAPI:
-    def __init__(self):
-        self.api_service_name = "youtube"
-        self.api_version = "v3"
-        self.DEVELOPER_KEY = "AIzaSyD22hb6jlGM_L3-SQwDlxKaIQ2LAJQKDbE"
-        self.youtube = googleapiclient.discovery.build(
-            self.api_service_name, self.api_version, developerKey=self.DEVELOPER_KEY)
-
-    def get_comments(self, video_id, max_results=100):
-        request = self.youtube.commentThreads().list(
-            part="snippet",
-            videoId=video_id,
-            maxResults=max_results
-        )
-        response = request.execute()
-        data = []
-        for item in response['items']:
-            data.append(item['snippet']['topLevelComment']['snippet']['textDisplay'])
-
-        return data
-    
-
-        # videoId="tLsJQ5srVQA",
 
 hide_menu = """
 <style>
@@ -49,7 +23,7 @@ footer{
 
 showWarningOnDirectExecution = False
 ps = PorterStemmer()
-image = Image.open('.\\icons\\logo.png')
+image = Image.open('icons/logo.png')
 
 
 st.set_page_config(page_title = "Cyberbullying Detection", page_icon = image)
@@ -63,12 +37,8 @@ st.sidebar.image(image , use_column_width=True, output_format='auto')
 st.sidebar.markdown("---")
 
 
-st.sidebar.markdown("<br> <br> <br> <br> <br> <br> <h1 style='text-align: center; font-size: 18px; color: #0080FF;'>© 2024 | Secure Net</h1>", unsafe_allow_html=True)
+st.sidebar.markdown("<br> <br> <br> <br> <br> <br> <h1 style='text-align: center; font-size: 18px; color: #0080FF;'>© 2023 | Ioannis Bakomichalis</h1>", unsafe_allow_html=True)
 
-
-youtube_api = YouTubeAPI()
-video_id = "tLsJQ5srVQA"
-comments = youtube_api.get_comments(video_id)
 
 def clean_text(tweet):
         # remove URL
@@ -118,7 +88,7 @@ model = pickle.load(open('pickle/bestmodel.pkl','rb'))
 st.title("Cyber-Bullying Detection🔍")
 st.markdown("---")
 st.markdown("<br>", unsafe_allow_html=True)
-input_text = comments[0]
+input_text = st.text_area("**_Enter the text to analyze_**", key="**_Enter the text to analyze_**")
 col1, col2 = st.columns([1,6])
 with col1:
     button_predict = st.button('Predict')
