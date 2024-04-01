@@ -14,7 +14,7 @@ footer{
 """
 
 showWarningOnDirectExecution = False
-image = Image.open('C:\\Users\\HP\\OneDrive\\Desktop\\CBDA-mains\\CBDA-main\\icons\\logo.png')
+image = Image.open('.\\icons\\logo.png')
 
 
 st.set_page_config(page_title = "CBDA", page_icon = image)
