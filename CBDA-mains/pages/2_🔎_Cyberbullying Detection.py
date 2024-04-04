@@ -2,6 +2,7 @@ import streamlit as st
 from PIL import Image
 import pickle
 import string
+import pandas as pd
 import re
 import nltk
 nltk.download('punkt')
@@ -10,11 +11,17 @@ from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer 
 import googleapiclient.discovery
 import googleapiclient.errors
+from dotenv import dotenv_values
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics import accuracy_score
+
+env_vars = dotenv_values(".env")
 
 class YouTubeAPI:
     def __init__(self):
         self.api_service_name = "youtube"
         self.api_version = "v3"
+        self.DEVELOPER_KEY = env_vars["ACCESS_TOKEN"]
         self.youtube = googleapiclient.discovery.build(
             self.api_service_name, self.api_version, developerKey=self.DEVELOPER_KEY)
 
@@ -29,6 +36,7 @@ class YouTubeAPI:
         for item in response.get('items', []):
             data.append(item['snippet']['topLevelComment']['snippet']['textDisplay'])
         return data
+    
     
     def get_video_title(self, video_id):
         request = self.youtube.videos().list(
@@ -104,21 +112,24 @@ if video_id:
                 y.append(ps.stem(i))
             return " ".join(y)
 
-        tfidf = pickle.load(open('pickle/TFIDFvectorizer.pkl','rb'))
-        model = pickle.load(open('pickle/bestmodel.pkl','rb'))
+        # Load the pickled classifier and vectorizer
+        with open("./pickle/rf_classifier.pkl", "rb") as f:
+            clf, accuracy = pickle.load(f)
+
+        with open("./pickle/tfidf_vectorizer.pkl", "rb") as f:
+            vectorizer = pickle.load(f)
 
         st.markdown("---")
         st.subheader(title)
         
         st.markdown("---")
         st.subheader("Comments")
-
         # Display all comments
         for comment in comments:
             cleanText = clean_text(comment)
             transformText = transform_text(cleanText)
-            vector_input = tfidf.transform([transformText])
-            result = model.predict(vector_input)[0]
+            vector_input = vectorizer.transform([transformText])
+            result = clf.predict(vector_input)[0]
             if result == 1:
                 st.error(comment)
             else:
@@ -134,7 +145,7 @@ if video_id:
         expander_accuracy = st.expander("Information", expanded=False)
         with expander_accuracy:
             st.info("Model Accuracy using Random Forest (RF) Classifier!")
-        st.warning("Accuracy:  **_91.70 %_**")
+        st.warning(f"Accuracy:  **{round(accuracy * 100, 2)} %**")
         st.markdown("---")
     except Exception as e:
         st.error("Error fetching comments. Please enter a valid YouTube video ID.")

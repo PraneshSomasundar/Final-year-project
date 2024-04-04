@@ -1,7 +1,83 @@
 import streamlit as st
 from PIL import Image
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression, SGDClassifier
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+import re
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
 
 
+def logistic_regression(data,text,flag):    
+    # Download NLTK resources
+    nltk.download('punkt')
+    nltk.download('stopwords')
+
+    def preprocess_text(text):
+        # Convert to lowercase
+        text = text.lower()
+        # Remove special characters and digits
+        text = re.sub(r'[^a-zA-Z\s]', '', text)
+        # Tokenization
+        tokens = nltk.word_tokenize(text)
+        # Remove stopwords and perform stemming
+        ps = PorterStemmer()
+        tokens = [ps.stem(word) for word in tokens if word not in set(stopwords.words('english'))]
+        return ' '.join(tokens)
+
+    # Apply preprocessing to the 'comments' column
+    data['clean_comments'] = data[text].apply(preprocess_text)
+
+    # Feature extraction
+    tfidf = TfidfVectorizer(max_features=1000)  # You can adjust max_features as needed
+    X = tfidf.fit_transform(data['clean_comments'])
+    y = data[flag]
+
+    # Split the dataset into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Select a machine learning algorithm (Logistic Regression in this example)
+    model = LogisticRegression()
+
+    # Train the model
+    model.fit(X_train, y_train)
+
+    # Make predictions
+    y_pred = model.predict(X_test)
+
+    # Evaluate the model
+    accuracy = accuracy_score(y_test, y_pred)
+
+    return accuracy
+
+dataset_info = {
+    "Cyber Bullying Types Dataset": {
+        "url": "./Dataset/CyberBullyingTypesDataset.csv",
+        "text": "Tweet",
+        "flag": "Class" # vectorize
+    },
+    "Cyber Troll Dataset": {
+        "url": "./Dataset/cybertroll_dataset.csv",
+        "text": "content",
+        "flag": "annotation"
+    },
+    "Classified Tweets Dataset": {
+        "url": "./Dataset/classified_tweets.csv",
+        "text": "text",
+        "flag": "cyberbullying"
+    },
+    "Cyberbullying Dataset": {
+        "url": "./Dataset/cyberbullying.csv",
+        "text": "tweet_text",
+        "flag": "cyberbullying_type"
+    }
+}
 
 hide_menu = """
 <style>
@@ -39,11 +115,11 @@ st.title("Algorithms📊")
 st.markdown("---")
 st.markdown("<br>", unsafe_allow_html=True)
 
-all_Datasets = ["Select a Dataset","Cyber Bullying Types Dataset", "Cyber Troll Dataset","Classified Tweets Dataset","Cyberbulling Classification Dataset","Cyber Bullying Types Dataset + Cyber Troll Dataset","Cyber Bullying Types Dataset + Cyber Troll Dataset + Classified Tweets Dataset + Cyberbulling Classification Dataset"]
+all_Datasets = ["Select a Dataset", "Cyber Troll Dataset","Classified Tweets Dataset","Cyberbullying Dataset"] # ,"Cyber Bullying Types Dataset"]
 data_choice = st.selectbox("Dataset", all_Datasets)
-all_Vectorizers = ["Select a Vectorizer", "TF-IDF", "CountVectorizer"]
+all_Vectorizers = ["Select a Vectorizer", "TF-IDF"]
 vect_choice = st.selectbox("Vectorizer", all_Vectorizers)
-all_ML_models = ["Select a Machine Learning Algorithm", "Logistic Regression", "Decision Tree", "Random Forest", "XGBoost", "Naive Bayes", "Support Vector Machine", "Bagging Decision Tree", "Boosting Decision Tree"]
+all_ML_models = ["Select a Machine Learning Algorithm", "Compare All", "Logistic Regression", "Naive Bayes", "Random Forest", "K Nearest Neighbors", "SGD Classifier"]
 model_choice = st.selectbox("Machine Learning Algorithm", all_ML_models)
 st.markdown("<br>", unsafe_allow_html=True)
 st.markdown("---")
@@ -60,408 +136,62 @@ elif data_choice == "Select a Dataset" and vect_choice != "Select a Vectorizer" 
     st.warning(":white[You should select **_Dataset_** and **_Machine Learning Algorithm_**]")
 elif data_choice != "Select a Dataset" and vect_choice == "Select a Vectorizer" and model_choice == "Select a Machine Learning Algorithm":
     st.warning(":white[You should select **_Vectorizer_** and **_Machine Learning Algorithm_**]")
+elif data_choice == "Select a Dataset" and vect_choice == "Select a Vectorizer" and model_choice == "Select a Machine Learning Algorithm":
+    st.warning(":white[You should select **_Dataset_** and **_Vectorizer_** and **_Machine Learning Algorithm_**]")
 else:
-    if data_choice == "Cyber Bullying Types Dataset":
-    # if token_choice == "Tokenizing":
-        if vect_choice == "TF-IDF":
-            if model_choice == "Logistic Regression":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_90.88%_**]")
-            elif model_choice == "Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_87.38%_**]")
-            elif model_choice == "Random Forest":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_89.71%_**]")
-            elif model_choice == "XGBoost":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_87.38%_**]")
-            elif model_choice == "Naive Bayes":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_88.78%_**]")
-            elif model_choice == "Support Vector Machine":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_89.71%_**]")
-            elif model_choice == "Bagging Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_88.08%_**]")
-            elif model_choice == "Boosting Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_87.38%_**]")
-        elif vect_choice == "CountVectorizer":
-            if model_choice == "Logistic Regression":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_90.65%_**]")
-            elif model_choice == "Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_89.71%_**]")
-            elif model_choice == "Random Forest":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_90.18%_**]")
-            elif model_choice == "XGBoost":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_89.95%_**]")
-            elif model_choice == "Naive Bayes":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_90.88%_**]")
-            elif model_choice == "Support Vector Machine":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_90.88%_**]")
-            elif model_choice == "Bagging Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_89.25%_**]")
-            elif model_choice == "Boosting Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_89.01%_**]")
-    elif   data_choice == "Cyber Troll Dataset":
-        if vect_choice == "TF-IDF":
-            if model_choice == "Logistic Regression":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_76.08%_**]")
-            elif model_choice == "Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_85.92%_**]")
-            elif model_choice == "Random Forest":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_91.70%_**]")
-            elif model_choice == "XGBoost":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_76.00%_**]")
-            elif model_choice == "Naive Bayes":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_78.20%_**]")
-            elif model_choice == "Support Vector Machine":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_80.50%_**]")
-            elif model_choice == "Bagging Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_84.87%_**]")
-            elif model_choice == "Boosting Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_91.22%_**]")
-        elif vect_choice == "CountVectorizer":
-            if model_choice == "Logistic Regression":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_81.57%_**]")
-            elif model_choice == "Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_84.60%_**]")
-            elif model_choice == "Random Forest":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_86.47%_**]")
-            elif model_choice == "XGBoost":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_73.48%_**]")
-            elif model_choice == "Naive Bayes":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_79.73%_**]")
-            elif model_choice == "Support Vector Machine":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_83.72%_**]")
-            elif model_choice == "Bagging Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_81.75%_**]")
-            elif model_choice == "Boosting Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_89.35%_**]")
-    elif   data_choice == "Classified Tweets Dataset":
-        if vect_choice == "TF-IDF":
-            if model_choice == "Logistic Regression":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_90.52%_**]")
-            elif model_choice == "Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_89.10%_**]")
-            elif model_choice == "Random Forest":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_91.45%_**]")
-            elif model_choice == "XGBoost":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_90.95%_**]")
-            elif model_choice == "Naive Bayes":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_87.89%_**]")
-            elif model_choice == "Support Vector Machine":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_91.30%_**]")
-            elif model_choice == "Bagging Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_91.17%_**]")
-            elif model_choice == "Boosting Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_90.24%_**]")
-        elif vect_choice == "CountVectorizer":
-            if model_choice == "Logistic Regression":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_91.07%_**]")
-            elif model_choice == "Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_88.90%_**]")
-            elif model_choice == "Random Forest":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_90.92%_**]")
-            elif model_choice == "XGBoost":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_91.38%_**]")
-            elif model_choice == "Naive Bayes":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_90.39%_**]")
-            elif model_choice == "Support Vector Machine":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_90.24%_**]")
-            elif model_choice == "Bagging Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_90.95%_**]")
-            elif model_choice == "Boosting Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_89.40%_**]")
-    elif   data_choice == "Cyberbulling Classification Dataset":  
-        if vect_choice == "TF-IDF":
-            if model_choice == "Logistic Regression":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_86.10%_**]")
-            elif model_choice == "Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_82.23%_**]")
-            elif model_choice == "Random Forest":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_84.12%_**]")
-            elif model_choice == "XGBoost":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_86.26%_**]")
-            elif model_choice == "Naive Bayes":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_84.67%_**]")
-            elif model_choice == "Support Vector Machine":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_86.27%_**]")
-            elif model_choice == "Bagging Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_84.61%_**]")
-            elif model_choice == "Boosting Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_83.54%_**]")
-        elif vect_choice == "CountVectorizer":
-            if model_choice == "Logistic Regression":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_86.10%_**]")
-            elif model_choice == "Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_82.07%_**]")
-            elif model_choice == "Random Forest":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_84.43%_**]")
-            elif model_choice == "XGBoost":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_86.26%_**]")
-            elif model_choice == "Naive Bayes":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_84.67%_**]")
-            elif model_choice == "Support Vector Machine":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_86.27%_**]")
-            elif model_choice == "Bagging Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_84.19%_**]")
-            elif model_choice == "Boosting Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_83.55%_**]")
-    elif   data_choice == "Cyber Bullying Types Dataset + Cyber Troll Dataset":
-        if vect_choice == "TF-IDF":
-            if model_choice == "Logistic Regression":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_78.12%_**]")
-            elif model_choice == "Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_85.45%_**]")
-            elif model_choice == "Random Forest":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_90.29%_**]")
-            elif model_choice == "XGBoost":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_75.52%_**]")
-            elif model_choice == "Naive Bayes":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_79.95%_**]")
-            elif model_choice == "Support Vector Machine":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_80.60%_**]")
-            elif model_choice == "Bagging Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_84.84%_**]")
-            elif model_choice == "Boosting Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_90.06%_**]")
-        elif vect_choice == "CountVectorizer":
-            if model_choice == "Logistic Regression":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_81.89%_**]")
-            elif model_choice == "Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_83.60%_**]")
-            elif model_choice == "Random Forest":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_85.52%_**]")
-            elif model_choice == "XGBoost":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_73.51%_**]")
-            elif model_choice == "Naive Bayes":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_79.58%_**]")
-            elif model_choice == "Support Vector Machine":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_83.24%_**]")
-            elif model_choice == "Bagging Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_82.45%_**]")
-            elif model_choice == "Boosting Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_89.16%_**]")
-    elif   data_choice == "Cyber Bullying Types Dataset + Cyber Troll Dataset + Classified Tweets Dataset + Cyberbulling Classification Dataset": 
-        if vect_choice == "TF-IDF":
-            if model_choice == "Logistic Regression":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_84.57%_**]")
-            elif model_choice == "Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_80.03%_**]")
-            elif model_choice == "Random Forest":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_81.77%_**]")
-            elif model_choice == "XGBoost":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_84.50%_**]")
-            elif model_choice == "Naive Bayes":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_74.90%_**]")
-            elif model_choice == "Support Vector Machine":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_84.72%_**]")
-            elif model_choice == "Bagging Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_82.69%_**]")
-            elif model_choice == "Boosting Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_80.65%_**]")
-        elif vect_choice == "CountVectorizer":
-            if model_choice == "Logistic Regression":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_84.57%_**]")
-            elif model_choice == "Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_80.11%_**]")
-            elif model_choice == "Random Forest":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_82.03%_**]")
-            elif model_choice == "XGBoost":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_84.50%_**]")
-            elif model_choice == "Naive Bayes":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_74.90%_**]")
-            elif model_choice == "Support Vector Machine":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_84.72%_**]")
-            elif model_choice == "Bagging Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_82.65%_**]")
-            elif model_choice == "Boosting Decision Tree":
-                st.markdown("<br>", unsafe_allow_html=True)
-                st.subheader("Evaluation Metrics")
-                st.success(":green[Accuracy: **_80.48%_**]")
+    # Load the dataset
+    url = dataset_info[data_choice]["url"]
+    text = dataset_info[data_choice]["text"]
+    flag = dataset_info[data_choice]["flag"]
+    data = pd.read_csv(url)
 
+    # Preprocessing
+    data.dropna(inplace=True)  # Drop any rows with missing values
+    X = data[text]
+    y = data[flag]
+
+    # Split the data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Vectorize the text using TfidfVectorizer
+    vectorizer = TfidfVectorizer()
+    X_train_vectorized = vectorizer.fit_transform(X_train)
+    X_test_vectorized = vectorizer.transform(X_test)
+
+    # Initialize classifiers
+    classifiers = {
+        "Naive Bayes": MultinomialNB(),
+        "K Nearest Neighbors": KNeighborsClassifier(),
+        "Random Forest": RandomForestClassifier(),
+        "SGD Classifier": SGDClassifier()
+    }
+
+    if model_choice == "Compare All":
+        # Train and evaluate classifiers
+        results = {}
+        for name, clf in classifiers.items():
+            clf.fit(X_train_vectorized, y_train)
+            y_pred = clf.predict(X_test_vectorized)
+            accuracy = accuracy_score(y_test, y_pred)
+            results[name] = accuracy
+        results["Logistic Regression"] = logistic_regression(data, text, flag)
+        # Print results
+        for name, acc in results.items():
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.subheader(f"Model: {name}")
+            st.success(f":green[Accuracy: **{round(acc * 100, 2)} %**]")
+
+    elif model_choice == "Logistic Regression":
+        accuracy = logistic_regression(data, text, flag)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.subheader(f"Model: {model_choice}")
+        st.success(f":green[Accuracy: **{round(accuracy * 100, 2)} %**]")
+    else:
+        clf = classifiers[model_choice]
+        clf.fit(X_train_vectorized, y_train)
+        y_pred = clf.predict(X_test_vectorized)
+        accuracy = accuracy_score(y_test, y_pred)
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.subheader(f"Model: {model_choice}")
+        st.success(f":green[Accuracy: **{round(accuracy * 100, 2)} %**]")
